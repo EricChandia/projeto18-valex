@@ -3,10 +3,12 @@ import dayjs from 'dayjs';
 import * as cardRepository from "../repositories/cardRepository";
 import * as companyRepository from "../repositories/companyRepository";
 import * as employeeRepository from "../repositories/employeeRepository";
+import * as paymentRepository from "../repositories/paymentRepository";
 import { faker } from '@faker-js/faker';
 import { TransactionTypes } from "../repositories/cardRepository";
 import { encryptWord, decryptWord } from "../utils/encrypt";
 import { CardInsertData } from "../repositories/cardRepository";
+
 var customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(customParseFormat);
 
@@ -34,6 +36,65 @@ export async function createCard(employeeId: number, cardType: TransactionTypes,
   return ({cod: 200, msg: "OK"});
 }
 
+
+
+export async function activateCard(id:number, cardCVV:number, password:number) {
+  const card = await findCard(id);
+  if(!card){
+    return({ cod: 400, msg: "Does not exists a card with this Id" });
+  }
+
+  if(String(cardCVV) !== decryptWord(card.securityCode)){
+    return({ cod: 400, msg: "CVV dos not match" });
+  }
+
+  const cardExpiration:string = card.expirationDate;
+  const cardExpirationDate = dayjs(cardExpiration, 'MM/YY');
+  if(cardExpirationDate.diff(dayjs(), 'days') <= 0){
+    return({ cod: 404, msg: "Card already expired" });
+  }
+
+  if(card.password !== null){
+    return({ cod: 400, msg: "This card has already been activated" });
+  }
+
+  const encryptedPassword:string = encryptWord(String(password));
+
+  const cardUpdateData = { password : encryptedPassword }
+  cardRepository.update(id, cardUpdateData);
+
+  return ({cod: 200, msg: "OK"});
+}
+
+export async function cardTransactions(id:number) {
+  const card = await findCard(id);
+  if(!card){
+    return({ cod: 400, msg: "Does not exists a card with this Id" });
+  }
+  
+  const transactions = await paymentRepository.findByCardId(Number(id));
+  console.log(transactions);
+
+  return ({cod: 200, msg: "OK"});
+}
+
+
+export async function blockCard(id:number, password:string) {
+
+  const card = await findCard(id);
+  if(!card){
+    return({ cod: 400, msg: "Does not exists a card with this Id" });
+  }
+  
+  const transactions = await paymentRepository.findByCardId(Number(id));
+  console.log(transactions);
+
+  return ({cod: 200, msg: "OK"});
+}
+
+
+
+//Card util functions
 
 function createCardData(employee:any, employeeId: number, cardType: TransactionTypes){
   const cardholderName : string = createCardName(employee.fullName);
@@ -76,32 +137,8 @@ function createCardName(employeeName : string){
   return employeeCardName;
 }
 
-export async function activateCard(cardId:number, cardCVV:number, password:number) {
-  
-  const card = await cardRepository.findById(cardId);
-  if(!card){
-    return({ cod: 400, msg: "Does not exists a card with this Id" });
-  }
-
-  if(String(cardCVV) !== decryptWord(card.securityCode)){
-    return({ cod: 400, msg: "CVV dos not match" });
-  }
-
-  const cardExpiration:string = card.expirationDate;
-  const cardExpirationDate = dayjs(cardExpiration, 'MM/YY');
-  if(cardExpirationDate.diff(dayjs(), 'days') <= 0){
-    return({ cod: 404, msg: "Card already expired" });
-  }
-
-  if(card.password !== null){
-    return({ cod: 400, msg: "This card has already been activated" });
-  }
-
-  const encryptedPassword:string = encryptWord(String(password));
-
-
-  const cardUpdateData = { password : encryptedPassword }
-  cardRepository.update(cardId, cardUpdateData);
-  
-  return ({cod: 200, msg: "OK"});
+async function findCard(id:number){
+  const card = await cardRepository.findById(id);
+  if(!card) return false;
+  return card;
 }

@@ -26,3 +26,19 @@ export async function createCard(req: Request, res: Response) {
   }
 
   
+  export async function cardTransactions(req:Request, res:Response) {
+    const { id } = req.params;
+
+    const {cod, msg}  = await cardService.cardTransactions(Number(id));
+
+    res.status(cod).send(msg);
+  }
+
+    
+  export async function blockCard(req:Request, res:Response) {
+    const { employeeId, cardType } : {employeeId: number, cardType: TransactionTypes} = req.body;
+
+    const {cod, msg}  = await cardService.cardTransactions(Number(id));
+
+    res.status(cod).send(msg);
+  }
