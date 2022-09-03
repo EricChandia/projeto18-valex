@@ -99,5 +99,9 @@ export async function activateCard(cardId:number, cardCVV:number, password:numbe
 
   const encryptedPassword:string = encryptWord(String(password));
 
+
+  const cardUpdateData = { password : encryptedPassword }
+  cardRepository.update(cardId, cardUpdateData);
+  
   return ({cod: 200, msg: "OK"});
 }
