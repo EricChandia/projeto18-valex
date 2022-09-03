@@ -5,6 +5,7 @@ import dayjs from "dayjs";
 import { TransactionTypes } from "../../../repositories/cardRepository";
 import { faker } from "@faker-js/faker";
 import { CardInsertData } from "../../../repositories/cardRepository";
+import * as rechargeRepository from "../../../repositories/rechargeRepository";
 
 //Card util functions
 
@@ -66,4 +67,36 @@ export function createCardName(employeeName : string){
   export function comparePassword(card:Card, password:string){
     if(String(password) !== decryptWord(String(card.password))) return false;
     return true;
+  }
+
+  export async function validateCard(id:number) {
+    const card: false | Card = await findCard(id);
+    if(!card){
+      return({ cod: 400, msg: "Does not exists a card with this Id" });
+    }
+  
+    if(card.password === null){
+      return({ cod: 400, msg: "This card is not active" });
+    }
+  
+    if (!checkIfExpirationDateIsValid(card.expirationDate)){
+      return({ cod: 400, msg: "Card already expired" });
+    }
+  
+    if(card.isBlocked === true){
+      return({ cod: 400, msg: "This card is already blocked" });
+    }
+
+    return({cod: 200, msg: "OK"});
+  
+  }
+
+  export async function cardCurrentAmount(cardId:number) {
+    let cardCurrentAmount = 0;
+    const rechargesInCard = await rechargeRepository.findByCardId(cardId);
+    rechargesInCard.map(recharge => {
+        cardCurrentAmount += recharge.amount;
+    });
+    
+    return cardCurrentAmount;
   }

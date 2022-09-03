@@ -8,13 +8,13 @@ export const createCardSchema = joi.object({
 
 export const activateCardSchema = joi.object({
   id: joi.number().integer().positive().required(),
-  cvv: joi.string().pattern(/^[0-9]{3}$/),
-  password: joi.string().pattern(/^[0-9]{4}$/)
+  cvv: joi.string().pattern(/^[0-9]{3}$/).required(),
+  password: joi.string().pattern(/^[0-9]{4}$/).required()
 });
 
 export const blockCardSchema = joi.object(
   {
     id: joi.number().integer().positive().required(),
-    password: joi.string().pattern(/^[0-9]{4}$/)
+    password: joi.string().pattern(/^[0-9]{4}$/).required()
   }
 )

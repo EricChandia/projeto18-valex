@@ -1,7 +1,7 @@
 import * as companyRepository from "../../repositories/companyRepository";
 import * as rechargeRepository from "../../repositories/rechargeRepository";
 import { Card } from "../../repositories/cardRepository";
-import { findCard, checkIfExpirationDateIsValid } from "../cardService/utils/cardServiceUtils";
+import { findCard, checkIfExpirationDateIsValid, cardCurrentAmount } from "../cardService/utils/cardServiceUtils";
 import dayjs from "dayjs";
 
 
@@ -35,16 +35,12 @@ export async function rechargeCard(xapikey:string, id:number, value:number) {
       return({ cod: 400, msg: "This card is not active" });
     }
   
-    let cardCurrentAmount = 0;
-    const rechargesInCard = await rechargeRepository.findByCardId(id);
-    rechargesInCard.map(recharge => {
-        cardCurrentAmount += recharge.amount;
-    });
-    cardCurrentAmount += value;
+    let cardAmount = await cardCurrentAmount(id);
+    cardAmount += value;
 
     const timestamp = dayjs();
 
-    const recharge = { cardId:id, amount:cardCurrentAmount };
+    const recharge = { cardId:id, amount:cardAmount };
 
     rechargeRepository.insert(recharge);
     return({cod: 200, msg: "OK"});
