@@ -1,0 +1,51 @@
+import * as companyRepository from "../../repositories/companyRepository";
+import * as rechargeRepository from "../../repositories/rechargeRepository";
+import { Card } from "../../repositories/cardRepository";
+import { findCard, checkIfExpirationDateIsValid } from "../cardService/utils/cardServiceUtils";
+import dayjs from "dayjs";
+
+
+
+export async function rechargeCard(xapikey:string, id:number, value:number) {
+    
+    const company = await companyRepository.findByApiKey(xapikey);
+    if(!company){
+      return({ cod: 400, msg: "Company does not exists with this api-key" });
+    }
+
+    if(value <= 0){
+        return({ cod: 400, msg: "Value must be grater than 0" });
+    }
+
+    const card: false | Card = await findCard(id);
+    if(!card){
+      return({ cod: 400, msg: "Does not exists a card with this Id" });
+    }
+  
+
+    if (!checkIfExpirationDateIsValid(card.expirationDate)){
+      return({ cod: 404, msg: "Card already expired" });
+    }
+  
+    if(card.isBlocked === true){
+      return({ cod: 400, msg: "This card is already blocked" });
+    }
+  
+    if(card.password === null){
+      return({ cod: 400, msg: "This card is not active" });
+    }
+  
+    let cardCurrentAmount = 0;
+    const rechargesInCard = await rechargeRepository.findByCardId(id);
+    rechargesInCard.map(recharge => {
+        cardCurrentAmount += recharge.amount;
+    });
+    cardCurrentAmount += value;
+
+    const timestamp = dayjs();
+
+    const recharge = { cardId:id, amount:cardCurrentAmount };
+
+    rechargeRepository.insert(recharge);
+    return({cod: 200, msg: "OK"});
+}

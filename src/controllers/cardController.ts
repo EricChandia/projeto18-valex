@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as cardService from "../services/cardService";
+import * as cardService from "../services/cardService/cardService";
 import { TransactionTypes } from "../repositories/cardRepository";
 
 export async function createCard(req: Request, res: Response) {
@@ -36,9 +36,16 @@ export async function createCard(req: Request, res: Response) {
 
     
   export async function blockCard(req:Request, res:Response) {
-    const { employeeId, cardType } : {employeeId: number, cardType: TransactionTypes} = req.body;
+    const { id, password } : {id: number, password: string} = req.body;
 
-    const {cod, msg}  = await cardService.cardTransactions(Number(id));
+    const {cod, msg}  = await cardService.blockCard(id, password);
+    res.status(cod).send(msg);
+  }
 
+      
+  export async function unblockCard(req:Request, res:Response) {
+    const { id, password } : {id: number, password: string} = req.body;
+
+    const {cod, msg}  = await cardService.unblockCard(id, password);
     res.status(cod).send(msg);
   }
